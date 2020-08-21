@@ -8,7 +8,10 @@ public class Player : MonoBehaviour
     [SerializeField] private float _gravity = 1f;
     [SerializeField] private float _jumpHeight = 10.0f;
     [SerializeField] private int _coins = 0;
+    [SerializeField] private int _lives = 3;
+    [SerializeField] private GameObject _respawnPoint;
     private UIManager _uiManager;
+    private GameManager _gameManager;
     private CharacterController _controller;
     private float _yVelocity;
     private bool _canDoubleJump = false;
@@ -22,12 +25,22 @@ public class Player : MonoBehaviour
             Debug.LogError("Player::UIManager is null");
         }
 
+        _gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+
+        if (_gameManager == null)
+        {
+            Debug.LogError("Player::GameManager is null");
+        }
+
         _controller = GetComponent<CharacterController>();
 
         if (_controller == null)
         {
             Debug.LogError("Player::Controller is null");
         }
+
+        _uiManager.UpdateLivesDisplay(_lives);
+
     }
 
     // Update is called once per frame
@@ -38,6 +51,7 @@ public class Player : MonoBehaviour
 
     void Movement()
     {
+        float yPos = transform.position.y;
         float horizontalInput = Input.GetAxis("Horizontal");
 
         Vector3 direction = new Vector3(horizontalInput, 0, 0);
@@ -69,6 +83,12 @@ public class Player : MonoBehaviour
         velocity.y = _yVelocity;
 
         _controller.Move(velocity * Time.deltaTime);
+
+        if (yPos <= -8f)
+        {
+            PlayerDeath();
+            transform.position = _respawnPoint.transform.position;
+        }
     }
 
     public void AddCoin()
@@ -76,5 +96,17 @@ public class Player : MonoBehaviour
         _coins++;
 
         _uiManager.UpdateCoinDisplay(_coins);
+    }
+
+    void PlayerDeath()
+    {
+        _lives--;
+
+        _uiManager.UpdateLivesDisplay(_lives);
+
+        if (_lives < 1)
+        {
+            _gameManager.GameOverSequence();
+        }
     }
 }
